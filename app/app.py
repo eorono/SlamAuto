@@ -1,3 +1,15 @@
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    # Esta es una respuesta simple para verificar que el servidor está funcionando.
+    return "Hola desde la App de Prueba!"
+
+# No hay más código, ni carga de archivos, para aislar el problema.
+# La aplicación original está comentada abajo para referencia futura.
+"""
 from flask import Flask, request, jsonify, render_template_string, send_file
 import os
 import json
@@ -6,8 +18,6 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 # Archivos
-# ADVERTENCIA: Estos archivos serán locales para cada contenedor y no se compartirán.
-# Se recomienda usar una base de datos o un volumen persistente en Railway.
 data_log_file = 'sensor_data_OperarioHist.txt'
 json_current_file = 'sensor_status.json'
 
@@ -24,7 +34,6 @@ conexion_activa_principal = {}
 
 # --- Helper Function para formatear tiempo ---
 def format_seconds_to_hms(seconds_total):
-    """Convierte segundos a un string HH:MM:SS."""
     if not isinstance(seconds_total, (int, float)) or seconds_total < 0:
         return "00:00:00"
     seconds_total = round(seconds_total)
@@ -33,7 +42,7 @@ def format_seconds_to_hms(seconds_total):
     return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
 
 # HTML para mostrar datos en una sola tabla
-HTML_TEMPLATE = """
+HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -76,7 +85,7 @@ HTML_TEMPLATE = """
     </p>
 </body>
 </html>
-"""
+'''
 
 # Cargar y guardar funciones
 def load_current_status():
@@ -108,7 +117,7 @@ def save_current_status():
 def append_to_log(log_entry):
     try:
         with open(data_log_file, 'a') as f:
-            f.write(log_entry + '\n')
+            f.write(log_entry + '\\n')
     except IOError as e:
         print(f"Error al escribir en el log {data_log_file}: {e}")
 
@@ -186,7 +195,6 @@ def receive_sensor_data():
 
 @app.route('/api/status', methods=['GET'])
 def get_current_status_json():
-    # Esta función puede simplificarse ya que la lógica principal está en la vista HTML
     return jsonify(current_car_status)
 
 @app.route('/')
@@ -226,5 +234,5 @@ def download_log_file():
         return send_file(data_log_file, as_attachment=True, download_name="sensor_data_OperarioHist.txt")
     return "Archivo de log no encontrado", 404
 
-# Cargar el estado al iniciar la aplicación
 load_current_status()
+"""
