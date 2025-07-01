@@ -229,5 +229,13 @@ def download_log_file():
     return "Archivo de log no encontrado", 404
 
 # Cargar el estado al iniciar la aplicación.
-# Esto se ejecuta una sola vez cuando el worker de Gunicorn arranca.
-load_current_status()
+# Se envuelve en un try-except para evitar que un error aquí detenga toda la aplicación.
+try:
+    print("Intentando cargar el estado inicial...")
+    load_current_status()
+    print("El proceso de carga inicial ha finalizado.")
+except Exception as e:
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(f"ERROR CRÍTICO DURANTE LA CARGA INICIAL: {e}")
+    print("La aplicación continuará, pero podría no funcionar como se espera.")
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
