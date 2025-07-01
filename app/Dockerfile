@@ -16,6 +16,6 @@ COPY . .
 # Exponer el puerto en el que Gunicorn se ejecutará
 EXPOSE 8000
 
-# Comando para ejecutar la aplicación usando Gunicorn con 4 workers
+# Comando para ejecutar la aplicación usando Gunicorn con 2 workers
 # Esto es más robusto que `flask run` para producción
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "--workers", "2", "--timeout", "120", "--bind", "0.0.0.0:8000", "app:app"]
