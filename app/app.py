@@ -134,6 +134,9 @@ def receive_sensor_data():
 
 @app.route('/api/status', methods=['GET'])
 def get_current_status_json():
+    # --- LÍNEA AÑADIDA ---
+    print(f"--- PÁGINA WEB SOLICITADA STATUS --- {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # ----------------------
     """Devuelve el estado actual completo en formato JSON."""
     return jsonify(current_car_status)
 
@@ -194,6 +197,10 @@ HTML_TEMPLATE = """
 @app.route('/')
 def show_data_ui():
     """Muestra la página web con el estado actual del operario."""
+    # --- LÍNEA AÑADIDA ---
+    print(f"--- PÁGINA WEB SOLICITADA --- {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # ----------------------
+    
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     operario_data = {
