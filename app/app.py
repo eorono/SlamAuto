@@ -7,24 +7,17 @@ from datetime import datetime
 app = Flask(__name__)
 
 # --- Configuración ---
-# Nombres de los archivos que guardan el estado y el historial.
-# ADVERTENCIA: En Railway, estos archivos son efímeros y se borrarán en cada despliegue.
-# Para producción, se recomienda usar una base de datos o un volumen persistente.
 DATA_LOG_FILE = 'sensor_data_OperarioHist.txt'
 JSON_STATUS_FILE = 'sensor_status.json'
-
-# Información fija del operario (podría venir de una base de datos)
 OPERARIOS_INFO = {
     "1001": {"nombre": "Operario Principal"}
 }
 
 # --- Variables Globales de Estado ---
-# Mantienen el estado actual mientras la aplicación se ejecuta.
 current_car_status = {}
 active_connection = {}
 
 # --- Funciones de Utilidad (Helpers) ---
-
 def format_seconds_to_hms(seconds_total: float) -> str:
     """Convierte un total de segundos a un formato de string HH:MM:SS."""
     if not isinstance(seconds_total, (int, float)) or seconds_total < 0:
@@ -37,7 +30,6 @@ def format_seconds_to_hms(seconds_total: float) -> str:
     return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
 
 # --- Funciones de Lectura y Escritura ---
-
 def load_status_from_file():
     """Carga el último estado conocido desde el archivo JSON al iniciar."""
     global current_car_status
@@ -70,20 +62,14 @@ def append_to_log(log_entry: str):
         print(f"Error al escribir en el log '{DATA_LOG_FILE}': {e}")
 
 # --- Endpoints de la API ---
-
 @app.route('/api/data', methods=['POST'])
 def receive_sensor_data():
-    """
-    Endpoint principal para recibir datos de los sensores.
-    """
+    """Endpoint principal para recibir datos de los sensores."""
     global current_car_status, active_connection
 
     data = request.get_json()
-    
-    # Imprime en los logs de Railway para depuración
     print(f"--- DATO RECIBIDO --- : {data}")
 
-    # 1. Validación de la entrada
     if not (data and 'tag' in data and 'distance' in data):
         return jsonify({"message": "Petición inválida, faltan 'tag' o 'distance'."}), 400
     
@@ -96,7 +82,6 @@ def receive_sensor_data():
     timestamp = datetime.now()
     timestamp_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
-    # 2. Actualizar o crear el estado del coche
     if tag not in current_car_status:
         current_car_status[tag] = {
             "tag": tag,
@@ -107,7 +92,6 @@ def receive_sensor_data():
     current_car_status[tag]['distance'] = distance
     current_car_status[tag]['timestamp'] = timestamp_str
 
-    # 3. Determinar el coche más cercano (ignorando distancias inválidas -1)
     closest_car_tag = None
     min_distance = float('inf')
     for car_tag, car_data in current_car_status.items():
@@ -116,56 +100,42 @@ def receive_sensor_data():
             min_distance = car_dist
             closest_car_tag = car_tag
 
-    # 4. Gestionar la conexión/desconexión del operario
     current_active_car = active_connection.get('coche')
     
-    # Si el coche más cercano ha cambiado (o es la primera conexión)
     if closest_car_tag and closest_car_tag != current_active_car:
-        # Si había una conexión previa, cerrarla y registrar el tiempo
         if current_active_car and current_active_car in current_car_status:
             start_time = active_connection['start_time']
             duration_seconds = (timestamp - start_time).total_seconds()
-            
-            # Acumular el tiempo en el historial del coche anterior
             historial = current_car_status[current_active_car]['operario_historial']['1001']
             historial['tiempo_total_segundos'] += duration_seconds
-            
             log_msg = (f"{timestamp_str} - OPERARIO DESCONECTADO de {current_active_car}. "
                        f"Sesión: {format_seconds_to_hms(duration_seconds)}. "
                        f"Total en coche: {format_seconds_to_hms(historial['tiempo_total_segundos'])}")
             append_to_log(log_msg)
 
-        # Iniciar nueva conexión con el coche más cercano
         active_connection = {'coche': closest_car_tag, 'start_time': timestamp}
         log_msg = (f"{timestamp_str} - OPERARIO CONECTADO a {closest_car_tag} "
                    f"(Distancia: {min_distance} cm)")
         append_to_log(log_msg)
 
-    # Si no hay ningún coche cercano y antes sí que había uno
     elif not closest_car_tag and current_active_car:
         start_time = active_connection['start_time']
         duration_seconds = (timestamp - start_time).total_seconds()
-        
         historial = current_car_status[current_active_car]['operario_historial']['1001']
         historial['tiempo_total_segundos'] += duration_seconds
-        
         log_msg = (f"{timestamp_str} - OPERARIO DESCONECTADO (sin coches cerca). "
                    f"Sesión: {format_seconds_to_hms(duration_seconds)}. "
                    f"Total en coche: {format_seconds_to_hms(historial['tiempo_total_segundos'])}")
         append_to_log(log_msg)
-        
-        active_connection = {} # Limpiar conexión
+        active_connection = {}
 
-    # 5. Guardar el estado actualizado
     save_status_to_file()
     return jsonify({"message": "Datos recibidos"}), 200
-
 
 @app.route('/api/status', methods=['GET'])
 def get_current_status_json():
     """Devuelve el estado actual completo en formato JSON."""
     return jsonify(current_car_status)
-
 
 @app.route('/download/log')
 def download_log_file():
@@ -175,7 +145,6 @@ def download_log_file():
     return "Archivo de log no encontrado.", 404
 
 # --- Interfaz Web (UI) ---
-
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -207,7 +176,7 @@ HTML_TEMPLATE = """
         </tr>
         <tr>
             <td>{{ operario['coche_tag'] or 'Ninguno' }}</td>
-            <td>{{ operario['distancia'] if operario['distancia'] is not None else 'N/A' }}</td>
+            <td>{{ operario['distancia'] if operario['distancia'] is not none else 'N/A' }}</td>
             <td>{{ format_time(operario['tiempo_sesion_actual']) }}</td>
             <td>{{ format_time(operario['tiempo_total_acumulado']) }}</td>
         </tr>
@@ -239,11 +208,9 @@ def show_data_ui():
         coche_actual_tag = active_connection['coche']
         operario_data['coche_tag'] = coche_actual_tag
         
-        # Calcular tiempo de la sesión activa
         duracion_sesion = datetime.now() - active_connection['start_time']
         operario_data['tiempo_sesion_actual'] = duracion_sesion.total_seconds()
         
-        # Obtener datos del coche desde el estado guardado
         if coche_actual_tag in current_car_status:
             coche_info = current_car_status[coche_actual_tag]
             operario_data['distancia'] = coche_info.get('distance')
@@ -258,11 +225,8 @@ def show_data_ui():
         format_time=format_seconds_to_hms
     )
 
-
 # --- Arranque de la Aplicación ---
 if __name__ == '__main__':
-    # Cargar el estado inicial al arrancar la aplicación
-    # (En un entorno de producción como Railway, esto se ejecuta cada vez que el contenedor se inicia)
     try:
         print("Iniciando aplicación y cargando estado...")
         load_status_from_file()
@@ -272,6 +236,3 @@ if __name__ == '__main__':
         print(f"Error: {e}")
         print("La aplicación continuará, pero podría no funcionar como se espera.")
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
-    # Esta parte es para desarrollo local. Railway usa un servidor WSGI como Gunicorn.
-    # app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
