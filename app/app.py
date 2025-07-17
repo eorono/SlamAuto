@@ -93,7 +93,7 @@ def receive_sensor_data():
         
         # Envía una respuesta de error al ESP32 para que no se quede esperando
         return jsonify({"message": "Error interno del servidor", "error": str(e)}), 500
-        
+
 @app.route('/api/status', methods=['GET'])
 def get_current_status_json():
     # --- LÍNEA AÑADIDA ---
@@ -101,6 +101,15 @@ def get_current_status_json():
     # ----------------------
     """Devuelve el estado actual completo en formato JSON."""
     return jsonify(current_car_status)
+
+@app.route('/api/data', methods=['POST'])
+def receive_sensor_data():
+    # Simplemente recibe los datos e inmediatamente responde.
+    data = request.get_json()
+    print(f"--- DATO RECIBIDO (Prueba Simple) --- : {data}")
+    
+    # Envía una respuesta de éxito de inmediato.
+    return jsonify({"message": "Datos recibidos por la prueba simple"}), 200
 
 @app.route('/download/log')
 def download_log_file():
@@ -196,6 +205,9 @@ def show_data_ui():
 
 # --- Arranque de la Aplicación ---
 if __name__ == '__main__':
+      # ... (tu código de carga inicial) ...
+    port = int(os.environ.get('PORT', 8080)) # Railway usa la variable de entorno PORT
+    app.run(host='0.0.0.0', port=port)
     try:
         print("Iniciando aplicación y cargando estado...")
         load_status_from_file()
