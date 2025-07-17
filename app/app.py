@@ -64,74 +64,36 @@ def append_to_log(log_entry: str):
 # --- Endpoints de la API ---
 @app.route('/api/data', methods=['POST'])
 def receive_sensor_data():
-    """Endpoint principal para recibir datos de los sensores."""
-    global current_car_status, active_connection
-
-    data = request.get_json()
-    print(f"--- DATO RECIBIDO --- : {data}")
-
-    if not (data and 'tag' in data and 'distance' in data):
-        return jsonify({"message": "Petición inválida, faltan 'tag' o 'distance'."}), 400
-    
+    # Envolver toda la lógica en un bloque try...except
     try:
-        tag = str(data['tag'])
-        distance = int(data['distance'])
-    except (ValueError, TypeError):
-        return jsonify({"message": "El formato de 'tag' o 'distance' es incorrecto."}), 400
+        global current_car_status, active_connection
 
-    timestamp = datetime.now()
-    timestamp_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        data = request.get_json()
+        print(f"--- DATO RECIBIDO --- : {data}")
 
-    if tag not in current_car_status:
-        current_car_status[tag] = {
-            "tag": tag,
-            "operario_historial": {
-                "1001": {"tiempo_total_segundos": 0.0}
-            }
-        }
-    current_car_status[tag]['distance'] = distance
-    current_car_status[tag]['timestamp'] = timestamp_str
+        if not (data and 'tag' in data and 'distance' in data):
+            return jsonify({"message": "Petición inválida, faltan 'tag' o 'distance'."}), 400
+        
+        # ... (toda tu lógica actual va aquí sin cambios) ...
+        # ...
+        # ...
 
-    closest_car_tag = None
-    min_distance = float('inf')
-    for car_tag, car_data in current_car_status.items():
-        car_dist = car_data.get('distance', -1)
-        if car_dist != -1 and car_dist < min_distance:
-            min_distance = car_dist
-            closest_car_tag = car_tag
+        save_status_to_file()
+        
+        # Si todo va bien, se envía la respuesta de éxito
+        return jsonify({"message": "Datos recibidos"}), 200
 
-    current_active_car = active_connection.get('coche')
-    
-    if closest_car_tag and closest_car_tag != current_active_car:
-        if current_active_car and current_active_car in current_car_status:
-            start_time = active_connection['start_time']
-            duration_seconds = (timestamp - start_time).total_seconds()
-            historial = current_car_status[current_active_car]['operario_historial']['1001']
-            historial['tiempo_total_segundos'] += duration_seconds
-            log_msg = (f"{timestamp_str} - OPERARIO DESCONECTADO de {current_active_car}. "
-                       f"Sesión: {format_seconds_to_hms(duration_seconds)}. "
-                       f"Total en coche: {format_seconds_to_hms(historial['tiempo_total_segundos'])}")
-            append_to_log(log_msg)
-
-        active_connection = {'coche': closest_car_tag, 'start_time': timestamp}
-        log_msg = (f"{timestamp_str} - OPERARIO CONECTADO a {closest_car_tag} "
-                   f"(Distancia: {min_distance} cm)")
-        append_to_log(log_msg)
-
-    elif not closest_car_tag and current_active_car:
-        start_time = active_connection['start_time']
-        duration_seconds = (timestamp - start_time).total_seconds()
-        historial = current_car_status[current_active_car]['operario_historial']['1001']
-        historial['tiempo_total_segundos'] += duration_seconds
-        log_msg = (f"{timestamp_str} - OPERARIO DESCONECTADO (sin coches cerca). "
-                   f"Sesión: {format_seconds_to_hms(duration_seconds)}. "
-                   f"Total en coche: {format_seconds_to_hms(historial['tiempo_total_segundos'])}")
-        append_to_log(log_msg)
-        active_connection = {}
-
-    save_status_to_file()
-    return jsonify({"message": "Datos recibidos"}), 200
-
+    # Este bloque se ejecutará si ocurre CUALQUIER error inesperado
+    except Exception as e:
+        # Imprime el error detallado en la consola de tu servidor (Railway)
+        print(f"!!!!!!!! ERROR INESPERADO EN /api/data !!!!!!!!")
+        import traceback
+        traceback.print_exc()
+        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        
+        # Envía una respuesta de error al ESP32 para que no se quede esperando
+        return jsonify({"message": "Error interno del servidor", "error": str(e)}), 500
+        
 @app.route('/api/status', methods=['GET'])
 def get_current_status_json():
     # --- LÍNEA AÑADIDA ---
