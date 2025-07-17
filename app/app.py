@@ -62,23 +62,23 @@ def append_to_log(log_entry: str):
         print(f"Error al escribir en el log '{DATA_LOG_FILE}': {e}")
 
 # --- Endpoints de la API ---
-@app.route('/api/data', methods=['POST'])
-def receive_sensor_data():
-    # Envolver toda la lógica en un bloque try...except
-    try:
-        global current_car_status, active_connection
-
-        data = request.get_json()
-        print(f"--- DATO RECIBIDO --- : {data}")
-
-        if not (data and 'tag' in data and 'distance' in data):
-            return jsonify({"message": "Petición inválida, faltan 'tag' o 'distance'."}), 400
-        
-        # ... (toda tu lógica actual va aquí sin cambios) ...
-        # ...
-        # ...
-
-        save_status_to_file()
+#@app.route('/api/data', methods=['POST'])
+#def receive_sensor_data():
+#    # Envolver toda la lógica en un bloque try...except
+#    try:
+#        global current_car_status, active_connection
+#
+#        data = request.get_json()
+#        print(f"--- DATO RECIBIDO --- : {data}")
+#
+#        if not (data and 'tag' in data and 'distance' in data):
+#            return jsonify({"message": "Petición inválida, faltan 'tag' o 'distance'."}), 400
+#        
+#        # ... (toda tu lógica actual va aquí sin cambios) ...
+#        # ...
+#        # ...
+#
+#        save_status_to_file()
         
         # Si todo va bien, se envía la respuesta de éxito
         return jsonify({"message": "Datos recibidos"}), 200
